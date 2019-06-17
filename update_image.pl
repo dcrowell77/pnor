@@ -182,7 +182,7 @@ while (@ARGV > 0){
         shift;
     }
     elsif(/^-ocmbfw_binary_filename/i){
-        # This is teh name of the processed ocmbfw binary filename
+        # This is the name of the processed ocmbfw binary filename
         $ocmbfw_binary_filename = $ARGV[1];
         shift;
     }
@@ -382,10 +382,16 @@ sub processConvergedSections {
         else
         {
             print "WARNING: OCMBFW binary not found, generating blank binary (w/ valid header) instead\n";
-            #Create blanke 4k image
+            #Create blank 4k image
             my $ocmbfw_generated_filename = "ocmbfw_generated.bin";
             run_command("dd if=/dev/zero of=$scratch_dir/$ocmbfw_generated_filename bs=1024 count=4");
-        
+
+            if( $ocmbfw_original_filename eq "" )
+            {
+                die "WARNING: No value for ocmbfw_original_filename, using ocmbfw_generated.pkg.bin\n";
+                $ocmbfw_original_filename = "ocmbfw_generated.pkg.bin";
+            }
+
             #Add header to blank image
             my $date = `date`;
             run_command("$hb_image_dir/pkgOcmbFw.pl --unpackagedBin $scratch_dir/$ocmbfw_generated_filename --packagedBin $ocmbfw_original_filename --timestamp \"$date\" --vendorVersion \"0.1\" --vendorUrl \"http://www.ibm.com\"");
@@ -394,8 +400,16 @@ sub processConvergedSections {
             run_command("$hb_image_dir/pkgOcmbFw.pl --verify --packagedBin $ocmbfw_original_filename");
             $sections{OCMBFW}{in}    = "$ocmbfw_original_filename";
         }
+
         #Final image will be under a new name after ECC protection and any other processing required
-        $sections{OCMBFW}{out}       = "$ocmbfw_binary_filename";
+        if( $ocmbfw_binary_filename eq "" )
+        {
+            die "ERROR: No value for ocmbfw_binary_filename\n";
+        }
+        else
+        {
+            $sections{OCMBFW}{out}       = "$ocmbfw_binary_filename";
+        }
     }
 
     # Build up the system bin files specification
